@@ -1,0 +1,9 @@
+﻿  Shooter.cpp
+e:\2d_shooter\game\game\shooter.cpp(59): warning C4551: в вызове функции отсутствует список аргументов
+e:\2d_shooter\game\game\shooter.cpp(123): warning C4996: 'fscanf': This function or variable may be unsafe. Consider using fscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+  c:\program files (x86)\windows kits\10\include\10.0.17763.0\ucrt\stdio.h(1197): note:  см. объявление "fscanf"
+e:\2d_shooter\game\game\shooter.cpp(202): warning C4244: аргумент: преобразование "time_t" в "unsigned int", возможна потеря данных
+e:\2d_shooter\game\game\shooter.cpp(233): warning C4244: инициализация: преобразование "sf::Int64" в "float", возможна потеря данных
+e:\2d_shooter\game\game\shooter.cpp(218): warning C4996: 'sf::Text::setColor': объявлен deprecate
+  e:\2d_shooter\game\packages\sfml_system.2.5.1\build\native\include\sfml\graphics\text.hpp(210): note:  см. объявление "sf::Text::setColor"
+  Game.vcxproj -> E:\2D_Shooter\Game\Debug\Game.exe
