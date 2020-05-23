@@ -29,6 +29,9 @@ protected:
 };
 
 class Bullet :public Entity { //класс в разработке
+private:
+	Bullet(const Bullet &bullet, float X, float Y) : Entity(X, Y)
+	{}
 public:
 	RectangleShape sprite;
 	Vector2f direction;
@@ -98,8 +101,8 @@ public:
 		isAlive = true;
 		Speed = 2.0;
 		health = 50;
-		sprite.setRadius(25.f); //враги получаются больше чем персонаж т.к. в диаметре 50
-		sprite.setFillColor(Color(180, 25, 195, 255)); //цвет розовый
+		sprite.setRadius(25.f + rand()%20 - 10); //враги получаются больше чем персонаж т.к. в диаметре 50
+		sprite.setFillColor(Color(rand()%255, 25, 195, 255)); //цвет розовый
 		sprite.setOrigin(12.5f, 12.5f);
 	}
 
@@ -119,26 +122,21 @@ public:
 		return sprite.getGlobalBounds().intersects(FloatRect(Vector2f(px, py), Vector2f(10.f, 10.f)));
 	}
 
-	bool CheckHit(float px, float py)
+	void IsHit()
 	{
-		return sprite.getGlobalBounds().intersects(FloatRect(Vector2f(px, py), Vector2f(10.f, 10.f)));
+		health -= 25;
+		sprite.setFillColor(Color(180, 25, 195, 255 - health*5));
 	}
 
 	void update(float time) override
 	{
-		if (CheckHit(PlayerX, PlayerY)) 
-		{
-		health -= 1;
-		sprite.setFillColor(Color(180, 25, 195, health * 5));
-		}
 		if (!CheckCollision(PlayerX, PlayerY)&&isAlive) //врагу не нужно двигаться когда он добрался до игрока
 			control();//функция управления персонажем
 		sprite.setPosition(x, y);
 		if (health <= 0) 
 		{ 
-			isAlive = false; 
-			sprite.setFillColor(Color(180, 225, 195, 255));
-		} //не реализованно!
+			isAlive = false;
+		} //не реализовано!
 	}
 };
 
@@ -330,7 +328,7 @@ bool startGame()
 	//Инициализация
 	srand(time(0));
 	Clock clock;
-	float keyDelay = 0.15f;
+	float keyDelay = 0.20f;
 	float timePassed = 0.0f;
 	int fps = 60;
 	//long PlayerScores = 0;
@@ -339,11 +337,13 @@ bool startGame()
 	window.setFramerateLimit(fps);
 
 	Player Hero(400, 200);
-	Enemy TestEnemy(100, 100);
-	Enemy TestEnemy2(400, 400);
-	Bullet b1(100, 100, Vector2f(0, 0));
-	std::vector<Bullet> bullets;
 	Vector2f bulletDirection(0, 0);
+	std::vector<Bullet> bullets;
+	std::vector<Enemy> enemies;
+	std::vector<FloatRect> colliders;
+	enemies.push_back(Enemy(200, 100));
+	enemies.push_back(Enemy(600, 600));
+	bool enemyIsDead = false;
 	//Font TextFont;
 	//TextFont.loadFromFile("images/arial.ttf");
 	//Text RecordText("", TextFont, 20);
@@ -379,15 +379,13 @@ bool startGame()
 		Hero.update(time);
 		PlayerX = Hero.x;
 		PlayerY = Hero.y; //я знаю что это плохо
-		TestEnemy.update(time);
-		TestEnemy2.update(time);
 
 		if (Keyboard::isKeyPressed(Keyboard::Left)) {bulletDirection.x = -1;}
 		else if (Keyboard::isKeyPressed(Keyboard::Right)) {bulletDirection.x = 1;}
 		if (Keyboard::isKeyPressed(Keyboard::Up)) {bulletDirection.y = -1;}
 		else if (Keyboard::isKeyPressed(Keyboard::Down)) {bulletDirection.y = 1;}
 
-		if (bulletDirection != Vector2f(0, 0) && (timePassed>=keyDelay))
+		if (bulletDirection != Vector2f(0, 0) && (timePassed >= keyDelay))
 		{
 			if (bulletDirection.y != 0 && bulletDirection.x != 0)
 			{
@@ -395,10 +393,11 @@ bool startGame()
 				bulletDirection.y *= sqrt(2) / 2;
 			}
 			bullets.push_back(Bullet(PlayerX, PlayerY, bulletDirection));
-			bulletDirection = Vector2f(0, 0);
-			timePassed = 0;
+			//std::cout << bullets.size() << std::endl << timePassed << std::endl;
+			timePassed = 0.0f;
 		}
 
+		bulletDirection = Vector2f(0, 0);
 		for (int i = bullets.size() - 1; i >= 0; i--)
 		{
 			bullets[i].update(time);
@@ -409,6 +408,42 @@ bool startGame()
 			}
 		}
 
+		for (int i = enemies.size() - 1; i >= 0; i--)
+		{
+			enemies[i].update(time);
+			for (int j = bullets.size() - 1; j >= 0; j--)
+			{
+				if (!enemyIsDead)
+					if (enemies[i].sprite.getGlobalBounds().intersects(bullets[j].sprite.getGlobalBounds()))
+					{
+						enemies[i].IsHit();
+						bullets.erase(bullets.begin() + j);
+						if (enemies[i].health <= 0)
+						{
+							enemyIsDead = true;
+							enemies.erase(enemies.begin() + i);
+						}
+					}
+			}
+			enemyIsDead = false;
+		}
+
+		for (int i = enemies.size() - 1; i >= 0; i--)
+		{
+			for (int j = i - 1; j >= 0; j--)
+			{
+				if (enemies[i].sprite.getGlobalBounds().intersects(enemies[j].sprite.getGlobalBounds()))
+				{
+					enemies[j].x += (rand() % 2) - 1;
+					enemies[j].y += (rand() % 2) - 1;
+				}
+			}
+		}
+
+		if (enemies.size() < 7)
+		{
+			enemies.push_back(Enemy(rand() % WindowWidth, rand() % WindowHeight));
+		}
 
 		//if (condition())
 		//{
@@ -433,8 +468,10 @@ bool startGame()
 		window.clear();
 		window.draw(BackgroundSprite);
 		//window.draw(RecordText);   //рисует этот текст
-		window.draw(TestEnemy.sprite);
-		window.draw(TestEnemy2.sprite);
+		for (int i = enemies.size() - 1; i >= 0; i--)
+		{
+			window.draw(enemies[i].sprite);
+		}
 		window.draw(Hero.sprite);
 		for (int i = bullets.size() - 1; i >= 0; i--)
 		{
