@@ -66,6 +66,7 @@ public:
 	int health; //пока не активное поле
 	bool isAlive; //пока не активное поле
 	RectangleShape sprite;
+	Vector2f playerDirection;
 
 	Player(float X, float Y) : Entity(X, Y) {
 		isAlive = true;
@@ -77,10 +78,26 @@ public:
 
 	void control() override
 	{
-		if (Keyboard::isKeyPressed(Keyboard::W)) { if (y > 0) y -= Speed; } //условия внутри отвечают за то чтобы игрок не вышел за поле
-		if (Keyboard::isKeyPressed(Keyboard::A)) { if (x > 0) x -= Speed; }
-		if (Keyboard::isKeyPressed(Keyboard::S)) { if (y < WindowHeight) y += Speed; }
-		if (Keyboard::isKeyPressed(Keyboard::D)) { if (x < WindowWidth) x += Speed; }
+		if (Keyboard::isKeyPressed(Keyboard::A)) { if (x > 0) playerDirection.x = -1; }
+		else if (Keyboard::isKeyPressed(Keyboard::D)) { if (x < WindowWidth) playerDirection.x = 1; }
+		if (Keyboard::isKeyPressed(Keyboard::W)) { if (y > 0) playerDirection.y = -1; }
+		else if (Keyboard::isKeyPressed(Keyboard::S)) { if (y < WindowHeight) playerDirection.y = 1; }
+		if (playerDirection != Vector2f(0, 0)) //если направление задано
+		{
+			if (playerDirection.y != 0 && playerDirection.x != 0) //нормализовать вектор движения героя sin и cos
+			{
+				playerDirection.x *= sqrt(2) / 2;
+				playerDirection.y *= sqrt(2) / 2;
+			}
+			x += Speed * playerDirection.x;
+			y += Speed * playerDirection.y;
+		}
+		playerDirection = Vector2f(0, 0); //вектор в любом случае обнулить.
+
+		//if (Keyboard::isKeyPressed(Keyboard::W)) { if (y > 0) y -= Speed; } //условия внутри отвечают за то чтобы игрок не вышел за поле
+		//if (Keyboard::isKeyPressed(Keyboard::A)) { if (x > 0) x -= Speed; }
+		//if (Keyboard::isKeyPressed(Keyboard::S)) { if (y < WindowHeight) y += Speed; }
+		//if (Keyboard::isKeyPressed(Keyboard::D)) { if (x < WindowWidth) x += Speed; }
 	}
 
 	void update(float time) override
@@ -93,16 +110,22 @@ public:
 
 class Enemy :public Entity { //класс врага похож на класс игрока
 public:
-	int health;
+	int currentHealth;
+	int maxHealth;
 	bool isAlive;
 	CircleShape sprite;
+	Color spriteColor;
+	float radius;
 
 	Enemy(float X, float Y) : Entity(X, Y) {
 		isAlive = true;
-		Speed = 2.0;
-		health = 50;
-		sprite.setRadius(25.f + rand()%20 - 10); //враги получаются больше чем персонаж т.к. в диаметре 50
-		sprite.setFillColor(Color(rand()%255, 25, 195, 255)); //цвет розовый
+		radius = 25.f + rand() % 25 - 12.5f;
+		Speed = 80/radius;
+		currentHealth = 3 * radius;
+		maxHealth = currentHealth;
+		spriteColor = Color(rand() % 255, 25, 195, 255); //цвет от синего до розового
+		sprite.setRadius(radius); //враги получаются больше чем персонаж т.к. в диаметре 50
+		sprite.setFillColor(spriteColor); 
 		sprite.setOrigin(12.5f, 12.5f);
 	}
 
@@ -124,8 +147,9 @@ public:
 
 	void IsHit()
 	{
-		health -= 25;
-		sprite.setFillColor(Color(180, 25, 195, 255 - health*5));
+		currentHealth -= 25;
+		spriteColor.a = 255 * currentHealth/maxHealth + 20;
+		sprite.setFillColor(spriteColor);
 	}
 
 	void update(float time) override
@@ -133,7 +157,7 @@ public:
 		if (!CheckCollision(PlayerX, PlayerY)&&isAlive) //врагу не нужно двигаться когда он добрался до игрока
 			control();//функция управления персонажем
 		sprite.setPosition(x, y);
-		if (health <= 0) 
+		if (currentHealth <= 0) 
 		{ 
 			isAlive = false;
 		} //не реализовано!
@@ -341,8 +365,6 @@ bool startGame()
 	std::vector<Bullet> bullets;
 	std::vector<Enemy> enemies;
 	std::vector<FloatRect> colliders;
-	enemies.push_back(Enemy(200, 100));
-	enemies.push_back(Enemy(600, 600));
 	bool enemyIsDead = false;
 	//Font TextFont;
 	//TextFont.loadFromFile("images/arial.ttf");
@@ -360,10 +382,7 @@ bool startGame()
 
 	while (window.isOpen()) //пока нет условия выхода по проигрышу
 	{
-		if (Keyboard::isKeyPressed(Keyboard::Space)) { return true; }//если пробел, то перезагружаем игру
-		if (Keyboard::isKeyPressed(Keyboard::Escape)) { return false; }//если эскейп, то выходим из игры
 		fps = 60;
-
 		Time dt = clock.restart();
 		timePassed += dt.asSeconds();
 		float time = dt.asSeconds();
@@ -380,31 +399,46 @@ bool startGame()
 		PlayerX = Hero.x;
 		PlayerY = Hero.y; //я знаю что это плохо
 
+		if (Keyboard::isKeyPressed(Keyboard::Space)) { return true; }//если пробел, то перезагружаем игру
+		if (Keyboard::isKeyPressed(Keyboard::Escape)) { return false; }//если эскейп, то выходим из игры
 		if (Keyboard::isKeyPressed(Keyboard::Left)) {bulletDirection.x = -1;}
 		else if (Keyboard::isKeyPressed(Keyboard::Right)) {bulletDirection.x = 1;}
 		if (Keyboard::isKeyPressed(Keyboard::Up)) {bulletDirection.y = -1;}
 		else if (Keyboard::isKeyPressed(Keyboard::Down)) {bulletDirection.y = 1;}
 
-		if (bulletDirection != Vector2f(0, 0) && (timePassed >= keyDelay))
+		if (enemies.size() < 7) //заспавнивать врага вне экрана если их меньше 7
 		{
-			if (bulletDirection.y != 0 && bulletDirection.x != 0)
-			{
-				bulletDirection.x *= sqrt(2) / 2;
-				bulletDirection.y *= sqrt(2) / 2;
-			}
-			bullets.push_back(Bullet(PlayerX, PlayerY, bulletDirection));
-			//std::cout << bullets.size() << std::endl << timePassed << std::endl;
-			timePassed = 0.0f;
+			int randX = rand() % WindowWidth;
+			int randY = rand() % WindowHeight;
+			if (randX < WindowWidth / 2)
+				randX -= WindowWidth / 2 + 30;
+			else randX += WindowWidth / 2 + 30;
+			if (randY < WindowHeight / 2)
+				randY -= WindowHeight / 2 + 30;
+			else randY += WindowHeight / 2 + 30;
+			enemies.push_back(Enemy(randX, randY));
 		}
 
-		bulletDirection = Vector2f(0, 0);
-		for (int i = bullets.size() - 1; i >= 0; i--)
+		if (bulletDirection != Vector2f(0, 0) && (timePassed >= keyDelay)) //задать направление пуле и выстрелить если прошло 0.2 сек
 		{
-			bullets[i].update(time);
-			Vector2f tmp = bullets[i].sprite.getPosition();
-			if (tmp.x < 0 || tmp.x > WindowWidth || tmp.y < 0 || tmp.y > WindowHeight)
+			if (bulletDirection.y != 0 && bulletDirection.x != 0) //нормализовать вектор движения пули sin и cos
 			{
-				bullets.erase(bullets.begin() + i);
+				bulletDirection.x *= sqrt(2) / 2; 
+				bulletDirection.y *= sqrt(2) / 2;
+			}
+			bullets.push_back(Bullet(PlayerX, PlayerY, bulletDirection)); //добавить пулю в вектор (положение игрока, направление)
+			//std::cout << bullets.size() << std::endl << timePassed << std::endl;
+			timePassed = 0.0f; //обнулить таймер задержки
+		}
+		bulletDirection = Vector2f(0, 0); //вектор в любом случае обнулить.
+
+		for (int i = bullets.size() - 1; i >= 0; i--) 
+		{
+			bullets[i].update(time); //обновляем пулю на каждом кадре
+			Vector2f tmp = bullets[i].sprite.getPosition(); //чтобы не запрашивать каждый раз для слежующего условия
+			if (tmp.x < 0 || tmp.x > WindowWidth || tmp.y < 0 || tmp.y > WindowHeight) //проверить столкновение со стеной
+			{
+				bullets.erase(bullets.begin() + i); //уничтожаем объект
 			}
 		}
 
@@ -418,7 +452,8 @@ bool startGame()
 					{
 						enemies[i].IsHit();
 						bullets.erase(bullets.begin() + j);
-						if (enemies[i].health <= 0)
+						std::cout << enemies[i].currentHealth << " :ch " << enemies[i].maxHealth << " :h " << std::endl;
+						if (enemies[i].currentHealth <= 0)
 						{
 							enemyIsDead = true;
 							enemies.erase(enemies.begin() + i);
@@ -428,7 +463,7 @@ bool startGame()
 			enemyIsDead = false;
 		}
 
-		for (int i = enemies.size() - 1; i >= 0; i--)
+		for (int i = enemies.size() - 1; i >= 0; i--) //не очень хорошая проверка на столкновение между врагами
 		{
 			for (int j = i - 1; j >= 0; j--)
 			{
@@ -438,11 +473,6 @@ bool startGame()
 					enemies[j].y += (rand() % 2) - 1;
 				}
 			}
-		}
-
-		if (enemies.size() < 7)
-		{
-			enemies.push_back(Enemy(rand() % WindowWidth, rand() % WindowHeight));
 		}
 
 		//if (condition())
@@ -468,11 +498,11 @@ bool startGame()
 		window.clear();
 		window.draw(BackgroundSprite);
 		//window.draw(RecordText);   //рисует этот текст
+		window.draw(Hero.sprite);
 		for (int i = enemies.size() - 1; i >= 0; i--)
 		{
 			window.draw(enemies[i].sprite);
 		}
-		window.draw(Hero.sprite);
 		for (int i = bullets.size() - 1; i >= 0; i--)
 		{
 			window.draw(bullets[i].sprite);
