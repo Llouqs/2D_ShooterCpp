@@ -430,7 +430,7 @@ bool startGame()
 
 	menu(window); // ׂ׃ׂ גûחמג לום‏!
 
-	AudioManager audio("kick3.wav", "Moon.wav");
+	AudioManager audio("kick3.ogg", "Heart.ogg");
 	bool pause = false;
 	Event event;
 

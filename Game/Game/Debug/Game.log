@@ -15,17 +15,17 @@ c:\users\вольдемар\desktop\2d_shootercpp\game\game\shooter.cpp(92): war
               T=float
           ]
 c:\users\вольдемар\desktop\2d_shootercpp\game\game\shooter.cpp(126): warning C4244: =: преобразование "float" в "int", возможна потеря данных
-c:\users\вольдемар\desktop\2d_shootercpp\game\game\shooter.cpp(278): warning C4244: аргумент: преобразование "time_t" в "unsigned int", возможна потеря данных
-c:\users\вольдемар\desktop\2d_shootercpp\game\game\shooter.cpp(315): warning C4996: 'fscanf': This function or variable may be unsafe. Consider using fscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+c:\users\вольдемар\desktop\2d_shootercpp\game\game\shooter.cpp(281): warning C4244: аргумент: преобразование "time_t" в "unsigned int", возможна потеря данных
+c:\users\вольдемар\desktop\2d_shootercpp\game\game\shooter.cpp(321): warning C4996: 'fscanf': This function or variable may be unsafe. Consider using fscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
   c:\program files (x86)\windows kits\10\include\10.0.17763.0\ucrt\stdio.h(1197): note:  см. объявление "fscanf"
-c:\users\вольдемар\desktop\2d_shootercpp\game\game\shooter.cpp(399): warning C4244: аргумент: преобразование "time_t" в "unsigned int", возможна потеря данных
-c:\users\вольдемар\desktop\2d_shootercpp\game\game\shooter.cpp(481): warning C4244: аргумент: преобразование "int" в "float", возможна потеря данных
-c:\users\вольдемар\desktop\2d_shootercpp\game\game\shooter.cpp(488): warning C4244: *=: преобразование "double" в "T", возможна потеря данных
+c:\users\вольдемар\desktop\2d_shootercpp\game\game\shooter.cpp(405): warning C4244: аргумент: преобразование "time_t" в "unsigned int", возможна потеря данных
+c:\users\вольдемар\desktop\2d_shootercpp\game\game\shooter.cpp(487): warning C4244: аргумент: преобразование "int" в "float", возможна потеря данных
+c:\users\вольдемар\desktop\2d_shootercpp\game\game\shooter.cpp(494): warning C4244: *=: преобразование "double" в "T", возможна потеря данных
           with
           [
               T=float
           ]
-c:\users\вольдемар\desktop\2d_shootercpp\game\game\shooter.cpp(489): warning C4244: *=: преобразование "double" в "T", возможна потеря данных
+c:\users\вольдемар\desktop\2d_shootercpp\game\game\shooter.cpp(495): warning C4244: *=: преобразование "double" в "T", возможна потеря данных
           with
           [
               T=float
