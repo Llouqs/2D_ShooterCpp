@@ -1,4 +1,6 @@
 #include <SFML/Graphics.hpp>
+#include <SFML/Audio.hpp>
+#include <string>
 #include <time.h>
 #include <iostream>
 #include <sstream>
@@ -37,7 +39,7 @@ public:
 	Vector2f direction;
 	Bullet(float X, float Y, Vector2f dir) : Entity(X, Y)
 	{
-		Speed = 15.0;
+		Speed = 20.0;
 		sprite.setSize(Vector2f(5.f, 5.f));
 		sprite.setFillColor(Color(255, 255, 255, 255));
 		direction = dir;
@@ -70,7 +72,7 @@ public:
 
 	Player(float X, float Y) : Entity(X, Y) {
 		isAlive = true;
-		Speed = 7.0;
+		Speed = 8.0;
 		sprite.setSize(Vector2f(25.f, 25.f)); //25х25 квадрат
 		sprite.setFillColor(Color(100, 0, 210, 255)); //фиолетовый цвет (не прозрачный)
 		sprite.setOrigin(10.5f, 10.5f); //центр в середине спрайта
@@ -164,6 +166,50 @@ public:
 	}
 };
 
+class AudioManager {
+private:
+	Music MainSoundTrack;
+	SoundBuffer ShootSoundBuffer;
+	Sound ShootSound;
+
+	void SetShootSound(std::string ShootSoundPath)
+	{
+		if (!ShootSoundBuffer.loadFromFile("music/" + ShootSoundPath))
+			std::cout << "Do not found " << ShootSoundPath << " in 'music/'" << std::endl;
+		ShootSound = Sound(ShootSoundBuffer);
+	}
+
+	void SetSoundTrack(std::string SoundTrackPath)
+	{
+		if (!MainSoundTrack.openFromFile("music/" + SoundTrackPath))
+			std::cout << "Do not found " << SoundTrackPath << " in 'music/'" << std::endl;
+	}
+
+public:
+	AudioManager(std:: string ShootSoundPath, std:: string SoundTrackPath)
+	{
+		SetShootSound(ShootSoundPath);
+		SetSoundTrack(SoundTrackPath);
+		SetSoundVolume(true);
+		SetSoundTrackVolume(true);
+		MainSoundTrack.play();
+	}
+
+	void SetSoundVolume(bool SoundOn)
+	{
+		SoundOn ? ShootSound.setVolume(10) : ShootSound.setVolume(0);
+	}
+
+	void SetSoundTrackVolume(bool SoundOn)
+	{
+		SoundOn ? MainSoundTrack.setVolume(15) : MainSoundTrack.setVolume(0);
+	}
+
+	void PlayShootSound()
+	{
+		ShootSound.play();
+	}
+};
 
 class Engine { //класс движок еще не реализован!!!
 private:
@@ -172,22 +218,25 @@ private:
 	RenderWindow MainWindow;
 	Sprite MainBackgroundSprite;
 	Texture MainBackgroundTexture;
+	AudioManager *audioManager;
 	std::vector<Enemy> enemies; //возможно будет несколько классов врагов (например: большие медленные круги и маленькие быстрые треугольники)
 	std::vector<Bullet> bullets;
 	Player *Hero;
+	bool gamePaused;
 
 	void input()
 	{
-		if (Keyboard::isKeyPressed(Keyboard::Space)) {}//если пробел, то перезагружаем игру
+		if (Keyboard::isKeyPressed(Keyboard::P)) {}//restart()
+		if (Keyboard::isKeyPressed(Keyboard::Space)) {}//если пробел, то пауза
 		if (Keyboard::isKeyPressed(Keyboard::Escape)) { MainWindow.close(); }//если эскейп, то выходим из игры
 		if (Keyboard::isKeyPressed(Keyboard::Left)) {}
 		if (Keyboard::isKeyPressed(Keyboard::Right)) {}
 		if (Keyboard::isKeyPressed(Keyboard::Up)) {}
 		if (Keyboard::isKeyPressed(Keyboard::Down)) {}
-		//if (Keyboard::isKeyPressed(Keyboard::W)) { if (y > -5) y -= Speed; } //условия внутри отвечают за то чтобы игрок не вышел за поле
-		//if (Keyboard::isKeyPressed(Keyboard::A)) { if (x > 0) x -= Speed; }
-		//if (Keyboard::isKeyPressed(Keyboard::S)) { if (y < WindowHeight - 25) y += Speed; }
-		//if (Keyboard::isKeyPressed(Keyboard::D)) { if (x < WindowWidth - 35) x += Speed; }
+		if (Keyboard::isKeyPressed(Keyboard::W)) {} //условия внутри отвечают за то чтобы игрок не вышел за поле
+		if (Keyboard::isKeyPressed(Keyboard::A)) {}
+		if (Keyboard::isKeyPressed(Keyboard::S)) {}
+		if (Keyboard::isKeyPressed(Keyboard::D)) {}
 	}
 
 	void update(float dtAsSeconds)
@@ -237,6 +286,8 @@ public:
 		//загрузка фона
 		MainBackgroundTexture.loadFromFile("images/background.png");
 		MainBackgroundSprite.setTexture(MainBackgroundTexture);
+		//загрузка звука
+		audioManager = new AudioManager("kick3.wav", "Moon.wav");
 	}
 
 	// Функция старт вызовет все приватные функции
@@ -252,7 +303,8 @@ public:
 			float dtAsSeconds = dt.asSeconds();
 
 			input();
-			update(dtAsSeconds);
+			if (!gamePaused)
+				update(dtAsSeconds);
 			draw();
 		}
 	}
@@ -352,9 +404,9 @@ bool startGame()
 	//Инициализация
 	srand(time(0));
 	Clock clock;
-	float keyDelay = 0.20f;
+	float keyDelay = 0.15f;
 	float timePassed = 0.0f;
-	int fps = 60;
+	int fps = 70;
 	//long PlayerScores = 0;
 	RenderWindow window(VideoMode(WindowWidth, WindowHeight), "2D-Shooter");
 	window.setPosition(sf::Vector2i(20, 15));
@@ -378,6 +430,8 @@ bool startGame()
 
 	menu(window); // ТУТ вызов меню!
 
+	AudioManager audio("kick3.wav", "Moon.wav");
+	bool pause = false;
 	Event event;
 
 	while (window.isOpen()) //пока нет условия выхода по проигрышу
@@ -399,14 +453,28 @@ bool startGame()
 		PlayerX = Hero.x;
 		PlayerY = Hero.y; //я знаю что это плохо
 
-		if (Keyboard::isKeyPressed(Keyboard::Space)) { return true; }//если пробел, то перезагружаем игру
+		if (Keyboard::isKeyPressed(Keyboard::Space) && (timePassed >= keyDelay))
+		{ 
+			if (pause)
+			{
+				pause = true;
+				window.setFramerateLimit(1);
+			}
+			else
+			{
+				pause = false;
+				window.setFramerateLimit(70);
+			}
+			timePassed = 0.0f;
+		}//если пробел, то перезагружаем игру
+		if (Keyboard::isKeyPressed(Keyboard::P)) { return true; }//если пробел, то перезагружаем игру
 		if (Keyboard::isKeyPressed(Keyboard::Escape)) { return false; }//если эскейп, то выходим из игры
 		if (Keyboard::isKeyPressed(Keyboard::Left)) {bulletDirection.x = -1;}
 		else if (Keyboard::isKeyPressed(Keyboard::Right)) {bulletDirection.x = 1;}
 		if (Keyboard::isKeyPressed(Keyboard::Up)) {bulletDirection.y = -1;}
 		else if (Keyboard::isKeyPressed(Keyboard::Down)) {bulletDirection.y = 1;}
 
-		if (enemies.size() < 7) //заспавнивать врага вне экрана если их меньше 7
+		if (enemies.size() < 12) //заспавнивать врага вне экрана если их меньше 7
 		{
 			int randX = rand() % WindowWidth;
 			int randY = rand() % WindowHeight;
@@ -429,6 +497,7 @@ bool startGame()
 			bullets.push_back(Bullet(PlayerX, PlayerY, bulletDirection)); //добавить пулю в вектор (положение игрока, направление)
 			//std::cout << bullets.size() << std::endl << timePassed << std::endl;
 			timePassed = 0.0f; //обнулить таймер задержки
+			audio.PlayShootSound();
 		}
 		bulletDirection = Vector2f(0, 0); //вектор в любом случае обнулить.
 
