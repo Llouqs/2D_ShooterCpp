@@ -171,12 +171,14 @@ private:
 	SoundBuffer ShootSoundBuffer;
 	Sound ShootSound;
 	bool SoundOn;
+	int currentSoundTrack;
 
 	void SetShootSound(std::string ShootSoundPath)
 	{
 		if (!ShootSoundBuffer.loadFromFile("music/" + ShootSoundPath))
 			std::cout << "Do not found " << ShootSoundPath << " in 'music/'" << std::endl;
 		ShootSound = Sound(ShootSoundBuffer);
+
 	}
 
 	void SetSoundTrack(std::string SoundTrackPath)
@@ -186,13 +188,25 @@ private:
 	}
 
 public:
-	AudioManager(std :: string ShootSoundPath, std :: string SoundTrackPath)
+	AudioManager(std :: string ShootSoundPath)
 	{
 		SetShootSound(ShootSoundPath);
-		SetSoundTrack(SoundTrackPath);
+		currentSoundTrack = 0;
+		SetNextSoundTrack();
 		SoundOn = false;
 		SetVolume();
+	}
+
+	void SetNextSoundTrack()
+	{
+		switch (currentSoundTrack)
+		{
+		case 0: SetSoundTrack("Moon.ogg"); currentSoundTrack = 1; break;
+		case 1: SetSoundTrack("Heart.ogg"); currentSoundTrack = 2; break;
+		case 2: SetSoundTrack("Blue.ogg"); currentSoundTrack = 0; break;
+		}
 		MainSoundTrack.play();
+		MainSoundTrack.setLoop(true);
 	}
 
 	void SetVolume()
@@ -270,6 +284,7 @@ private:
 
 	void UpdateEnemies(float dtAsSeconds)
 	{
+		spawnNewEnemies();
 		Enemy::CurentPlayerPosition = Vector2f(Hero->x, Hero->y);
 		bool enemyIsDead = false;
 		for (int i = enemies.size() - 1; i >= 0; i--)
@@ -279,7 +294,6 @@ private:
 			CheckCollisionBulletsEnemies(enemyIsDead, i);
 			enemyIsDead = false;
 		}
-		spawnNewEnemies();
 	}
 
 	void UpdateBullets(float dtAsSeconds)
@@ -334,15 +348,44 @@ private:
 
 	void input()
 	{
+		if (Keyboard::isKeyPressed(Keyboard::N) && (timePassed >= keyDelay)) //next SoundTrack
+		{
+			audioManager->SetNextSoundTrack();
+			timePassed = 0.0f;
+		}
 		if (Keyboard::isKeyPressed(Keyboard::V) && (timePassed >= keyDelay)) //volume "on" or "off"
 		{
 			audioManager->SetVolume();
 			timePassed = 0.0f;
 		}
-		if (Keyboard::isKeyPressed(Keyboard::P)) {}//restart()
-		if (Keyboard::isKeyPressed(Keyboard::Space)) //если пробел, то пауза
+		if (Keyboard::isKeyPressed(Keyboard::P) && (timePassed >= keyDelay)) //перезапуск если нажата P
+		{
+			srand(time(0));
+			MainWindow.draw(MainBackgroundSprite);
+			MainWindow.display();
+			Hero = new Player(400, 200);
+			bulletDirection = Vector2f(0, 0);
+			for (int i = bullets.size() - 1; i >= 0; i--)
+			{
+				bullets.erase(bullets.begin() + i);
+			}
+			for (int i = enemies.size() - 1; i >= 0; i--)
+			{
+				enemies.erase(enemies.begin() + i);
+			}
+			//gamePaused = isGamePaused();
+			timePassed = 0.0f;
+		}
+		if (Keyboard::isKeyPressed(Keyboard::Space) && (timePassed >= keyDelay)) //если пробел, то пауза
 		{
 			gamePaused = isGamePaused();
+			RectangleShape PauseRect;
+			PauseRect.setSize(Vector2f(MainWindowWidth, MainWindowHeight));
+			PauseRect.setFillColor(Color(0, 0, 0, 50));
+			PauseRect.setPosition(0, 0);
+			MainWindow.draw(PauseRect);
+			MainWindow.display();
+			timePassed = 0.0f;
 		}
 
 		if (Keyboard::isKeyPressed(Keyboard::Escape)) //если эскейп, то выходим из игры
@@ -399,10 +442,10 @@ public:
 		MainBackgroundTexture.loadFromFile("images/background.png");
 		MainBackgroundSprite.setTexture(MainBackgroundTexture);
 		//загрузка звука
-		audioManager = new AudioManager("kick3.ogg", "Moon.ogg");
+		audioManager = new AudioManager("kick3.ogg");
 		Hero = new Player(400, 200);
 		bulletDirection = Vector2f(0, 0);
-		gamePaused = true;
+		gamePaused = false;
 		
 	}
 
@@ -426,10 +469,12 @@ public:
 
 			input();
 
-			//if (!gamePaused)
+			if (!gamePaused)
+			{
 				update(dtAsSeconds);
 
-			draw();
+				draw();
+			}
 		}
 	}
 
@@ -517,22 +562,10 @@ void record(long Scores)
 	}
 }
 
-
-bool startGame()
+int main()
 {
 	Engine GameEngine;
 	GameEngine.menu();
 	GameEngine.start();
-	return false;
-}
-
-void gameRunning() {//ф-ция перезагружает игру , если это необходимо
-	if (startGame())
-		gameRunning(); //если startGame() == true, то вызываем занова ф-цию gameRunning(), которая в свою очередь опять вызывает startGame() 
-}
-
-int main()
-{
-	gameRunning();//запускаем процесс игры
 	return 0;
 }
