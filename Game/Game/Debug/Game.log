@@ -1,5 +1,5 @@
 ﻿  Shooter.cpp
-c:\users\вольдемар\desktop\2d_shootercpp\game\game\shooter.cpp(48): warning C4244: аргумент: преобразование "int" в "T", возможна потеря данных
+c:\users\вольдемар\desktop\2d_shootercpp\game\game\shooter.cpp(52): warning C4244: аргумент: преобразование "int" в "T", возможна потеря данных
           with
           [
               T=float
@@ -14,26 +14,35 @@ c:\users\вольдемар\desktop\2d_shootercpp\game\game\shooter.cpp(90): war
           [
               T=float
           ]
-c:\users\вольдемар\desktop\2d_shootercpp\game\game\shooter.cpp(120): warning C4244: =: преобразование "float" в "int", возможна потеря данных
-c:\users\вольдемар\desktop\2d_shootercpp\game\game\shooter.cpp(316): warning C4018: <: несоответствие типов со знаком и без знака
-c:\users\вольдемар\desktop\2d_shootercpp\game\game\shooter.cpp(323): warning C4244: аргумент: преобразование "int" в "float", возможна потеря данных
-c:\users\вольдемар\desktop\2d_shootercpp\game\game\shooter.cpp(338): warning C4244: *=: преобразование "double" в "T", возможна потеря данных
+c:\users\вольдемар\desktop\2d_shootercpp\game\game\shooter.cpp(160): warning C4244: =: преобразование "float" в "int", возможна потеря данных
+c:\users\вольдемар\desktop\2d_shootercpp\game\game\shooter.cpp(341): warning C4996: 'sf::Text::setColor': объявлен deprecate
+  c:\users\вольдемар\desktop\2d_shootercpp\game\packages\sfml_system.2.5.1\build\native\include\sfml\graphics\text.hpp(210): note:  см. объявление "sf::Text::setColor"
+c:\users\вольдемар\desktop\2d_shootercpp\game\game\shooter.cpp(344): warning C4996: 'sf::Text::setColor': объявлен deprecate
+  c:\users\вольдемар\desktop\2d_shootercpp\game\packages\sfml_system.2.5.1\build\native\include\sfml\graphics\text.hpp(210): note:  см. объявление "sf::Text::setColor"
+c:\users\вольдемар\desktop\2d_shootercpp\game\game\shooter.cpp(355): warning C4996: 'sf::Text::setColor': объявлен deprecate
+  c:\users\вольдемар\desktop\2d_shootercpp\game\packages\sfml_system.2.5.1\build\native\include\sfml\graphics\text.hpp(210): note:  см. объявление "sf::Text::setColor"
+c:\users\вольдемар\desktop\2d_shootercpp\game\game\shooter.cpp(360): warning C4996: 'sf::Text::setColor': объявлен deprecate
+  c:\users\вольдемар\desktop\2d_shootercpp\game\packages\sfml_system.2.5.1\build\native\include\sfml\graphics\text.hpp(210): note:  см. объявление "sf::Text::setColor"
+c:\users\вольдемар\desktop\2d_shootercpp\game\game\shooter.cpp(500): warning C4018: <: несоответствие типов со знаком и без знака
+c:\users\вольдемар\desktop\2d_shootercpp\game\game\shooter.cpp(507): warning C4244: аргумент: преобразование "int" в "float", возможна потеря данных
+c:\users\вольдемар\desktop\2d_shootercpp\game\game\shooter.cpp(513): warning C4018: <: несоответствие типов со знаком и без знака
+c:\users\вольдемар\desktop\2d_shootercpp\game\game\shooter.cpp(524): warning C4244: аргумент: преобразование "time_t" в "unsigned int", возможна потеря данных
+c:\users\вольдемар\desktop\2d_shootercpp\game\game\shooter.cpp(550): warning C4244: аргумент: преобразование "const int" в "T", возможна потеря данных
           with
           [
               T=float
           ]
-c:\users\вольдемар\desktop\2d_shootercpp\game\game\shooter.cpp(339): warning C4244: *=: преобразование "double" в "T", возможна потеря данных
+c:\users\вольдемар\desktop\2d_shootercpp\game\game\shooter.cpp(563): warning C4244: *=: преобразование "double" в "T", возможна потеря данных
           with
           [
               T=float
           ]
-c:\users\вольдемар\desktop\2d_shootercpp\game\game\shooter.cpp(363): warning C4244: аргумент: преобразование "time_t" в "unsigned int", возможна потеря данных
-c:\users\вольдемар\desktop\2d_shootercpp\game\game\shooter.cpp(383): warning C4244: аргумент: преобразование "const int" в "T", возможна потеря данных
+c:\users\вольдемар\desktop\2d_shootercpp\game\game\shooter.cpp(564): warning C4244: *=: преобразование "double" в "T", возможна потеря данных
           with
           [
               T=float
           ]
-c:\users\вольдемар\desktop\2d_shootercpp\game\game\shooter.cpp(434): warning C4244: аргумент: преобразование "time_t" в "unsigned int", возможна потеря данных
-c:\users\вольдемар\desktop\2d_shootercpp\game\game\shooter.cpp(547): warning C4996: 'fscanf': This function or variable may be unsafe. Consider using fscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+c:\users\вольдемар\desktop\2d_shootercpp\game\game\shooter.cpp(665): warning C4244: аргумент: преобразование "time_t" в "unsigned int", возможна потеря данных
+c:\users\вольдемар\desktop\2d_shootercpp\game\game\shooter.cpp(777): warning C4996: 'fscanf': This function or variable may be unsafe. Consider using fscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
   c:\program files (x86)\windows kits\10\include\10.0.17763.0\ucrt\stdio.h(1197): note:  см. объявление "fscanf"
   Game.vcxproj -> C:\Users\Вольдемар\Desktop\2D_ShooterCpp\Game\Debug\Game.exe

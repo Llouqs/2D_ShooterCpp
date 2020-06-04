@@ -17,9 +17,9 @@ using namespace sf; //пространство имен SFML
 class Entity { //абстрактный класс Сущность для всех движущихся объектов
 public:
 	float x, y; //у любого объекта есть текущая координата в 2D-пространстве
-	float Speed; //т.к. класс описывает движущиеся объекты
 
 protected:
+	float Speed; //т.к. класс описывает движущиеся объекты
 	Entity(float X, float Y) { //конструктор защищен от вызова извне т.к. описывает абстрактный класс
 		x = X; y = Y;
 	}
@@ -30,11 +30,15 @@ protected:
 
 class Bullet :public Entity { //класс в разработке
 private:
-	Bullet(const Bullet &bullet, float X, float Y) : Entity(X, Y)
-	{}
+	Vector2f direction;
+	void control() override
+	{
+		x += direction.x * Speed;
+		y += direction.y * Speed;
+	}
+
 public:
 	RectangleShape sprite;
-	Vector2f direction;
 	Bullet(float X, float Y, Vector2f dir) : Entity(X, Y)
 	{
 		Speed = 20.0;
@@ -48,12 +52,6 @@ public:
 		direction = Vector2f(x, y);
 	}
 
-	void control() override
-	{
-		x += direction.x * Speed;
-		y += direction.y * Speed;
-	}
-
 	void update(float time) override
 	{
 		control();
@@ -62,26 +60,28 @@ public:
 };
 
 class Player :public Entity { //класс игрока
-public:
-	int health; //пока не активное поле
-	bool isAlive; //пока не активное поле
-	RectangleShape sprite;
+private: 
 	Vector2f playerDirection;
+	bool isAlive; 
+	Color spriteColor;
+	int currentHealth;
+	int maxHealth;
+public:
+	RectangleShape sprite;
 
 	Player(float X, float Y) : Entity(X, Y) {
 		isAlive = true;
 		Speed = 8.0;
+		maxHealth = 250;
+		currentHealth = maxHealth;
+		spriteColor = Color(100, 0, 210, 255);
 		sprite.setSize(Vector2f(25.f, 25.f)); //25х25 квадрат
-		sprite.setFillColor(Color(100, 0, 210, 255)); //фиолетовый цвет (не прозрачный)
+		sprite.setFillColor(spriteColor); //фиолетовый цвет (не прозрачный)
 		sprite.setOrigin(10.5f, 10.5f); //центр в середине спрайта
 	}
 
-	void control() override
+	void setPlayerDirection()
 	{
-		if (Keyboard::isKeyPressed(Keyboard::A)) { if (x > 0) playerDirection.x = -1; }
-		else if (Keyboard::isKeyPressed(Keyboard::D)) { if (x < 800) playerDirection.x = 1; }
-		if (Keyboard::isKeyPressed(Keyboard::W)) { if (y > 0) playerDirection.y = -1; }
-		else if (Keyboard::isKeyPressed(Keyboard::S)) { if (y < 650) playerDirection.y = 1; }
 		if (playerDirection != Vector2f(0, 0)) //если направление задано
 		{
 			if (playerDirection.y != 0 && playerDirection.x != 0) //нормализовать вектор движения героя sin и cos
@@ -95,27 +95,67 @@ public:
 		playerDirection = Vector2f(0, 0); //вектор в любом случае обнулить
 	}
 
+	void control() override
+	{
+		if (Keyboard::isKeyPressed(Keyboard::A)) { if (x > 0) playerDirection.x = -1; }
+		else if (Keyboard::isKeyPressed(Keyboard::D)) { if (x < 800) playerDirection.x = 1; }
+		if (Keyboard::isKeyPressed(Keyboard::W)) { if (y > 0) playerDirection.y = -1; }
+		else if (Keyboard::isKeyPressed(Keyboard::S)) { if (y < 650) playerDirection.y = 1; }
+	}
+
+	int getCurrentHealth()
+	{
+		return currentHealth;
+	}
+
+	void IsHeal()
+	{
+		if (currentHealth + 25 > maxHealth)
+			currentHealth = maxHealth;
+		else
+			currentHealth += 25;
+		spriteColor.a = 255 - (maxHealth - currentHealth);
+		sprite.setFillColor(spriteColor);
+	}
+
+	void IsHit()
+	{
+		currentHealth -= 1;
+		spriteColor.a = 255 - (maxHealth - currentHealth);
+		sprite.setFillColor(spriteColor);
+	}
+
+	bool PlayerAlive()
+	{
+		return isAlive;
+	}
+
 	void update(float time) override
 	{
 		control();//функция управления персонажем
+		setPlayerDirection();
 		sprite.setPosition(x, y); //с каждым обновлением у игрока может быть новая позиция
-		if (health <= 0) { isAlive = false; } //пока не реализовано!
+		if (currentHealth <= 0) { isAlive = false; } //пока не реализовано!
 	}
 };
 
 class Enemy :public Entity { //класс врага похож на класс игрока
-public:
-	int currentHealth;
+private:
 	int maxHealth;
 	bool isAlive;
-	CircleShape sprite;
 	Color spriteColor;
 	float radius;
+	int currentHealth;
+public:
+	CircleShape sprite;
 	static Vector2f CurentPlayerPosition;
 
 	Enemy(float X, float Y) : Entity(X, Y) {
 		isAlive = true;
-		radius = 25.f + rand() % 25 - 12.5f;
+		if (rand() % 100 == 66)
+			radius = 200;
+		else
+			radius = 25.f + rand() % 25 - 12.5f;
 		Speed = 80/radius;
 		currentHealth = 3 * radius;
 		maxHealth = currentHealth;
@@ -123,6 +163,16 @@ public:
 		sprite.setRadius(radius); //враги получаются больше чем персонаж т.к. в диаметре 50
 		sprite.setFillColor(spriteColor); 
 		sprite.setOrigin(12.5f, 12.5f);
+	}
+
+	int getCurrentHealth()
+	{
+		return currentHealth;
+	}
+
+	int getMaxHealth()
+	{
+		return maxHealth;
 	}
 
 	float hypotenuse() {
@@ -145,7 +195,10 @@ public:
 	void IsHit()
 	{
 		currentHealth -= 25;
-		spriteColor.a = 255 * currentHealth/maxHealth + 20;
+		if (255 * currentHealth / maxHealth + 20 >= 255)
+			spriteColor.a = 255;
+		else
+			spriteColor.a = 255 * currentHealth/maxHealth + 20;
 		sprite.setFillColor(spriteColor);
 	}
 
@@ -155,15 +208,34 @@ public:
 		if (!CheckCollision(CurentPlayerPosition.x, CurentPlayerPosition.y)&&isAlive) //врагу не нужно двигаться когда он добрался до игрока
 			control();//функция управления персонажем
 		sprite.setPosition(x, y);
-		if (currentHealth <= 0) 
-		{ 
+		if (currentHealth <= 0)
+		{
 			isAlive = false;
-		} //не реализовано!
+		}
 	}
 };
 
 Vector2f Enemy :: CurentPlayerPosition = Vector2f(0, 0);
 
+class HealBonus
+{
+private:
+
+	float x, y;
+	Color spriteColor;
+	
+public:
+	RectangleShape sprite;
+	HealBonus(float x, float y)
+	{
+		spriteColor = Color(Color::White);
+		sprite.setSize(Vector2f(20.f, 20.f)); 
+		sprite.setRotation(45);
+		sprite.setFillColor(spriteColor);
+		sprite.setOrigin(2.5f, 2.5f); //центр в середине спрайта
+		sprite.setPosition(x, y);
+	}
+};
 
 class AudioManager {
 private:
@@ -171,6 +243,7 @@ private:
 	SoundBuffer ShootSoundBuffer;
 	Sound ShootSound;
 	bool SoundOn;
+	bool SoundTrackOn;
 	int currentSoundTrack;
 
 	void SetShootSound(std::string ShootSoundPath)
@@ -194,7 +267,9 @@ public:
 		currentSoundTrack = 0;
 		SetNextSoundTrack();
 		SoundOn = false;
-		SetVolume();
+		SoundOn = false;
+		SetSoundTrackVolume();
+		SetSoundVolume();
 	}
 
 	void SetNextSoundTrack()
@@ -209,18 +284,30 @@ public:
 		MainSoundTrack.setLoop(true);
 	}
 
-	void SetVolume()
+	void SetSoundTrackVolume()
 	{
-		if (SoundOn) 
+		if (SoundTrackOn)
+		{
+			MainSoundTrack.setVolume(15);
+			SoundTrackOn = false;
+		}
+		else
+		{
+			MainSoundTrack.setVolume(0);
+			SoundTrackOn = true;
+		}
+	}
+
+	void SetSoundVolume()
+	{
+		if (SoundOn)
 		{
 			ShootSound.setVolume(10);
-			MainSoundTrack.setVolume(15);
 			SoundOn = false;
 		}
 		else
 		{
 			ShootSound.setVolume(0);
-			MainSoundTrack.setVolume(0);
 			SoundOn = true;
 		}
 	}
@@ -231,11 +318,72 @@ public:
 	}
 };
 
+class UIManager
+{
+private:
+	Text HealthText;
+	Text ScoreText;
+	Font MainFont;
+	Color TextColor;
+
+	std::string Convert(int number) {
+		std::ostringstream buff;
+		buff << number;
+		return buff.str();
+	}
+
+public:
+	UIManager(int health, int scores)
+	{
+		MainFont.loadFromFile("fonts/Riviera.otf");
+		HealthText = Text("", MainFont, 20);
+		TextColor = Color(Color::White);
+		HealthText.setColor(TextColor);
+		HealthText.setPosition(30, 30);
+		ScoreText = Text("", MainFont, 20);
+		ScoreText.setColor(TextColor);
+		ScoreText.setPosition(30, 60);
+		setHealthText(health);
+		setScoreText(scores);
+	}
+
+	void setHealthText(int health)
+	{
+		if (health <= 50 && TextColor != Color(Color::Red))
+		{
+			TextColor = Color(Color::Red);
+			HealthText.setColor(TextColor);
+		}
+		if (health > 50 && TextColor == Color(Color::Red))
+		{
+			TextColor = Color(Color::White);
+			HealthText.setColor(TextColor);
+		}
+		HealthText.setString("Health: " + Convert(health));
+	}
+
+	void setScoreText(int scores)
+	{
+		ScoreText.setString("Scores: " + Convert(scores));
+	}
+
+	Text getScoreText()
+	{
+		return ScoreText;
+	}
+
+	Text getHealthText()
+	{
+		return HealthText;
+	}
+};
+
 class Engine { //класс движок еще не реализован!!!
 private:
 	int fps = 70;
 	const int MainWindowHeight = 650, MainWindowWidth = 800;
 	const int MaxEnemiesCount = 12;
+	const int MaxHealBonusCount = 3;
 	float keyDelay;
 	float timePassed;
 	RenderWindow MainWindow;
@@ -244,9 +392,13 @@ private:
 	AudioManager *audioManager;
 	std::vector<Enemy> enemies; //возможно будет несколько классов врагов (например: большие медленные круги и маленькие быстрые треугольники)
 	std::vector<Bullet> bullets;
+	std::vector<HealBonus> healBonuses;
 	Player *Hero;
 	bool gamePaused;
 	Vector2f bulletDirection;
+	float bulletTimePassed;
+	UIManager *uiManager;
+	int scores;
 
 	void CheckCollisionBulletsEnemies(bool enemyIsDead, int i)
 	{
@@ -259,9 +411,13 @@ private:
 					enemies[i].IsHit();
 					bullets.erase(bullets.begin() + j);
 					//std::cout << enemies[i].currentHealth << " :ch " << enemies[i].maxHealth << " :h " << std::endl;
-					if (enemies[i].currentHealth <= 0)
+					if (enemies[i].getCurrentHealth() <= 0)
 					{
 						enemyIsDead = true;
+						if (rand() % 3 == 1)
+							spawnNewHealBonuses(enemies[i].x, enemies[i].y);
+						scores += enemies[i].getMaxHealth();
+						uiManager->setScoreText(scores);
 						enemies.erase(enemies.begin() + i);
 					}
 				}
@@ -282,6 +438,33 @@ private:
 		}
 	}
 
+	void CheckCollisionEnemiesPlayer(int i) //need fix
+	{
+		if (enemies[i].sprite.getGlobalBounds().intersects(Hero->sprite.getGlobalBounds()))
+		{
+			Hero->IsHit();
+			uiManager->setHealthText(Hero->getCurrentHealth());
+		}
+	}
+
+	void CheckCollisionPlayerHealBonus(int i)
+	{
+		if (healBonuses[i].sprite.getGlobalBounds().intersects(Hero->sprite.getGlobalBounds()))
+		{
+			Hero->IsHeal();
+			uiManager->setHealthText(Hero->getCurrentHealth());
+			healBonuses.erase(healBonuses.begin() + i);
+		}
+	}
+
+	void UpdateHealBonuses()
+	{
+		for (int i = healBonuses.size() - 1; i >= 0; i--)
+		{
+			CheckCollisionPlayerHealBonus(i);
+		}
+	}
+
 	void UpdateEnemies(float dtAsSeconds)
 	{
 		spawnNewEnemies();
@@ -290,6 +473,7 @@ private:
 		for (int i = enemies.size() - 1; i >= 0; i--)
 		{
 			enemies[i].update(dtAsSeconds);
+			CheckCollisionEnemiesPlayer(i);
 			CheckCollisionEnemiesEnemies(i);
 			CheckCollisionBulletsEnemies(enemyIsDead, i);
 			enemyIsDead = false;
@@ -324,14 +508,55 @@ private:
 		}
 	}
 
+	void spawnNewHealBonuses(float x, float y)
+	{
+		if (healBonuses.size() < MaxHealBonusCount)
+			healBonuses.push_back(HealBonus(x, y));
+	}
+
 	bool isGamePaused()
 	{
-		return gamePaused == false;
+		return gamePaused == false; //если gamePaused == true => false, и наоборот
+	}
+
+	void restartGame()
+	{
+		srand(time(0));
+		MainWindow.draw(MainBackgroundSprite);
+		MainWindow.display();
+		Hero = new Player(400, 200);
+		bulletDirection = Vector2f(0, 0);
+		for (int i = bullets.size() - 1; i >= 0; i--)
+		{
+			bullets.erase(bullets.begin() + i);
+		}
+		for (int i = enemies.size() - 1; i >= 0; i--)
+		{
+			enemies.erase(enemies.begin() + i);
+		}
+		for (int i = healBonuses.size() - 1; i >= 0; i--)
+		{
+			healBonuses.erase(healBonuses.begin() + i);
+		}
+		scores = 0;
+		uiManager->setHealthText(Hero->getCurrentHealth());
+		uiManager->setScoreText(scores);
+	}
+
+	void pauseGame()
+	{
+		gamePaused = isGamePaused();
+		RectangleShape PauseRect;
+		PauseRect.setSize(Vector2f(MainWindowWidth, MainWindowHeight));
+		PauseRect.setFillColor(Color(0, 0, 0, 50));
+		PauseRect.setPosition(0, 0);
+		MainWindow.draw(PauseRect);
+		MainWindow.display();
 	}
 
 	void setBulletDirection()
 	{
-		if (bulletDirection != Vector2f(0, 0) && (timePassed >= keyDelay)) //задать направление пуле и выстрелить если прошло 0.2 сек
+		if (bulletDirection != Vector2f(0, 0) && (bulletTimePassed >= keyDelay)) //задать направление пуле и выстрелить если прошло 0.2 сек
 		{
 			if (bulletDirection.y != 0 && bulletDirection.x != 0) //нормализовать вектор движения пули sin и cos
 			{
@@ -340,7 +565,7 @@ private:
 			}
 			bullets.push_back(Bullet(Hero->x, Hero->y, bulletDirection)); //добавить пулю в вектор (положение игрока, направление)
 			//std::cout << bullets.size() << std::endl << timePassed << std::endl;
-			timePassed = 0.0f; //обнулить таймер задержки
+			bulletTimePassed = 0.0f; //обнулить таймер задержки
 			audioManager->PlayShootSound();
 		}
 		bulletDirection = Vector2f(0, 0); //вектор в любом случае обнулить.
@@ -348,49 +573,36 @@ private:
 
 	void input()
 	{
-		if (Keyboard::isKeyPressed(Keyboard::N) && (timePassed >= keyDelay)) //next SoundTrack
+		if (Keyboard::isKeyPressed(Keyboard::N) && (timePassed >= keyDelay + 0.3f)) //next SoundTrack
 		{
 			audioManager->SetNextSoundTrack();
 			timePassed = 0.0f;
 		}
-		if (Keyboard::isKeyPressed(Keyboard::V) && (timePassed >= keyDelay)) //volume "on" or "off"
+		if (Keyboard::isKeyPressed(Keyboard::V) && (timePassed >= keyDelay + 0.3f)) //volume "on" or "off"
 		{
-			audioManager->SetVolume();
+			audioManager->SetSoundTrackVolume();
 			timePassed = 0.0f;
 		}
-		if (Keyboard::isKeyPressed(Keyboard::P) && (timePassed >= keyDelay)) //перезапуск если нажата P
+		if (Keyboard::isKeyPressed(Keyboard::B) && (timePassed >= keyDelay + 0.3f)) //volume "on" or "off"
 		{
-			srand(time(0));
-			MainWindow.draw(MainBackgroundSprite);
-			MainWindow.display();
-			Hero = new Player(400, 200);
-			bulletDirection = Vector2f(0, 0);
-			for (int i = bullets.size() - 1; i >= 0; i--)
-			{
-				bullets.erase(bullets.begin() + i);
-			}
-			for (int i = enemies.size() - 1; i >= 0; i--)
-			{
-				enemies.erase(enemies.begin() + i);
-			}
-			//gamePaused = isGamePaused();
+			audioManager->SetSoundVolume();
 			timePassed = 0.0f;
 		}
-		if (Keyboard::isKeyPressed(Keyboard::Space) && (timePassed >= keyDelay)) //если пробел, то пауза
+		if (Keyboard::isKeyPressed(Keyboard::P) && (timePassed >= keyDelay + 0.3f)) //перезапуск если нажата P
 		{
-			gamePaused = isGamePaused();
-			RectangleShape PauseRect;
-			PauseRect.setSize(Vector2f(MainWindowWidth, MainWindowHeight));
-			PauseRect.setFillColor(Color(0, 0, 0, 50));
-			PauseRect.setPosition(0, 0);
-			MainWindow.draw(PauseRect);
-			MainWindow.display();
+			restartGame();
+			timePassed = 0.0f;
+		}
+		if (Keyboard::isKeyPressed(Keyboard::Space) && (timePassed >= keyDelay + 0.3f)) //если пробел, то пауза
+		{
+			pauseGame();
 			timePassed = 0.0f;
 		}
 
-		if (Keyboard::isKeyPressed(Keyboard::Escape)) //если эскейп, то выходим из игры
+		if (Keyboard::isKeyPressed(Keyboard::Escape)) //если эскейп, то меню
 		{ 
-			MainWindow.close(); 
+			restartGame();
+			menu();
 		} 
 
 		if (Keyboard::isKeyPressed(Keyboard::Left)) { bulletDirection.x = -1; }
@@ -409,12 +621,19 @@ private:
 
 		//Враги
 		UpdateEnemies(dtAsSeconds);
+		
+		//Хилки
+		UpdateHealBonuses();
 	}
 
 	void draw()
 	{
 		MainWindow.clear();
 		MainWindow.draw(MainBackgroundSprite);
+		for (int i = healBonuses.size() - 1; i >= 0; i--)
+		{
+			MainWindow.draw(healBonuses[i].sprite);
+		}
 		MainWindow.draw(Hero->sprite);
 		for (int i = bullets.size() - 1; i >= 0; i--)
 		{
@@ -424,6 +643,8 @@ private:
 		{
 			MainWindow.draw(enemies[i].sprite);
 		}
+		MainWindow.draw(uiManager->getHealthText());
+		MainWindow.draw(uiManager->getScoreText());
 		MainWindow.display(); // всё это показывает
 	}
 
@@ -431,9 +652,6 @@ public:
 	// Конструктор движка
 	Engine()
 	{
-		srand(time(0));
-		keyDelay = 0.15f;
-		timePassed = 0.0f;
 		//создание и настройка окна
 		MainWindow.create(VideoMode(MainWindowWidth, MainWindowHeight), "2D-Shooter");
 		MainWindow.setPosition(sf::Vector2i(20, 15));
@@ -443,10 +661,17 @@ public:
 		MainBackgroundSprite.setTexture(MainBackgroundTexture);
 		//загрузка звука
 		audioManager = new AudioManager("kick3.ogg");
+		//инициализация
+		srand(time(0));
+		keyDelay = 0.15f;
+		timePassed = 0.0f;
+		bulletTimePassed = 0.0f;
 		Hero = new Player(400, 200);
 		bulletDirection = Vector2f(0, 0);
 		gamePaused = false;
-		
+		//загрузка текста
+		scores = 0;
+		uiManager = new UIManager(Hero->getCurrentHealth(), scores);
 	}
 
 	// Функция старт вызовет все приватные функции
@@ -462,6 +687,7 @@ public:
 			Time dt = clock.restart();
 			float dtAsSeconds = dt.asSeconds();
 			timePassed += dt.asSeconds();
+			bulletTimePassed += dt.asSeconds();
 
 			while (MainWindow.pollEvent(ClosedEvent)) {
 				if (ClosedEvent.type == Event::Closed) MainWindow.close();
@@ -469,11 +695,15 @@ public:
 
 			input();
 
-			if (!gamePaused)
+			if (!gamePaused) //если пауза - не обновляем кадры => не отрисовываем, обновляем только ввод
 			{
 				update(dtAsSeconds);
 
 				draw();
+			}
+			if (!Hero->PlayerAlive())
+			{
+				restartGame();
 			}
 		}
 	}
