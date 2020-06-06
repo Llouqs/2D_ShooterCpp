@@ -1,3 +1,4 @@
+#define _CRT_SECURE_NO_WARNINGS
 #include <SFML/Graphics.hpp>
 #include <SFML/Audio.hpp>
 #include <string>
@@ -110,17 +111,18 @@ public:
 
 	void IsHeal()
 	{
-		if (currentHealth + 25 > maxHealth)
+		if (currentHealth + 10 > maxHealth)
 			currentHealth = maxHealth;
 		else
-			currentHealth += 25;
+			currentHealth += 10;
 		spriteColor.a = 255 - (maxHealth - currentHealth);
 		sprite.setFillColor(spriteColor);
 	}
 
 	void IsHit()
 	{
-		currentHealth -= 1;
+		if (currentHealth > 0)
+			currentHealth -= 1;
 		spriteColor.a = 255 - (maxHealth - currentHealth);
 		sprite.setFillColor(spriteColor);
 	}
@@ -323,6 +325,7 @@ class UIManager
 private:
 	Text HealthText;
 	Text ScoreText;
+	Text RecordText;
 	Font MainFont;
 	Color TextColor;
 
@@ -338,11 +341,14 @@ public:
 		MainFont.loadFromFile("fonts/Riviera.otf");
 		HealthText = Text("", MainFont, 20);
 		TextColor = Color(Color::White);
-		HealthText.setColor(TextColor);
+		HealthText.setFillColor(TextColor);
 		HealthText.setPosition(30, 30);
 		ScoreText = Text("", MainFont, 20);
-		ScoreText.setColor(TextColor);
+		ScoreText.setFillColor(TextColor);
 		ScoreText.setPosition(30, 60);
+		RecordText = Text("", MainFont, 20);
+		RecordText.setFillColor(TextColor);
+		//RecordText.setPosition(30, 90);
 		setHealthText(health);
 		setScoreText(scores);
 	}
@@ -352,12 +358,12 @@ public:
 		if (health <= 50 && TextColor != Color(Color::Red))
 		{
 			TextColor = Color(Color::Red);
-			HealthText.setColor(TextColor);
+			HealthText.setFillColor(TextColor);
 		}
 		if (health > 50 && TextColor == Color(Color::Red))
 		{
 			TextColor = Color(Color::White);
-			HealthText.setColor(TextColor);
+			HealthText.setFillColor(TextColor);
 		}
 		HealthText.setString("Health: " + Convert(health));
 	}
@@ -365,6 +371,17 @@ public:
 	void setScoreText(int scores)
 	{
 		ScoreText.setString("Scores: " + Convert(scores));
+	}
+
+	void setRecordText(int scores)
+	{
+		RecordText.setPosition(30, 90);
+		RecordText.setString("Record: " + Convert(scores) + "                 PRESS SPACE TO RESTART");
+	}
+
+	Text getRecordText()
+	{
+		return RecordText;
 	}
 
 	Text getScoreText()
@@ -375,6 +392,47 @@ public:
 	Text getHealthText()
 	{
 		return HealthText;
+	}
+};
+
+class RecordManager {
+private:
+	int currentRecord;
+	int bestRecord;
+
+	void getBestRecord()
+	{
+		FILE * File;
+		fopen_s(&File, "record.txt", "r");
+		fscanf(File, "%d", &bestRecord);
+		fclose(File);
+	}
+
+	void setBestRecord(int scores)
+	{
+		FILE * File;
+		currentRecord = scores;
+		if (currentRecord > bestRecord)
+		{
+			fopen_s(&File, "record.txt", "w");
+			fprintf(File, "%d", currentRecord);
+			fclose(File);
+		}
+	}
+
+public:
+	RecordManager(int scores)
+	{
+		getBestRecord();
+		setBestRecord(scores);
+	}
+
+	int getRecord()
+	{
+		if(currentRecord < bestRecord)
+			return bestRecord;
+		else
+			return currentRecord;
 	}
 };
 
@@ -398,6 +456,7 @@ private:
 	Vector2f bulletDirection;
 	float bulletTimePassed;
 	UIManager *uiManager;
+	RecordManager * recordManager;
 	int scores;
 
 	void CheckCollisionBulletsEnemies(bool enemyIsDead, int i)
@@ -522,8 +581,6 @@ private:
 	void restartGame()
 	{
 		srand(time(0));
-		MainWindow.draw(MainBackgroundSprite);
-		MainWindow.display();
 		Hero = new Player(400, 200);
 		bulletDirection = Vector2f(0, 0);
 		for (int i = bullets.size() - 1; i >= 0; i--)
@@ -538,6 +595,16 @@ private:
 		{
 			healBonuses.erase(healBonuses.begin() + i);
 		}
+		recordManager = new RecordManager(scores);
+		gamePaused = isGamePaused();
+		RectangleShape PauseRect;
+		PauseRect.setSize(Vector2f(MainWindowWidth, MainWindowHeight));
+		PauseRect.setFillColor(Color(0, 0, 0, 50));
+		PauseRect.setPosition(0, 0);
+		MainWindow.draw(PauseRect);
+		uiManager->setRecordText(recordManager->getRecord());
+		MainWindow.draw(uiManager->getRecordText());
+		MainWindow.display();
 		scores = 0;
 		uiManager->setHealthText(Hero->getCurrentHealth());
 		uiManager->setScoreText(scores);
@@ -767,30 +834,6 @@ public:
 		}
 	}
 };
-
-//функции взаимодействия с рекордом
-long FileElem()
-{
-	long Element;
-	FILE * File;
-	fopen_s(&File, "record.txt", "r");
-	fscanf(File, "%d", &Element);
-	fclose(File);
-	return Element;
-}
-
-void record(long Scores)
-{
-	long Element = FileElem();
-	FILE * File;
-
-	if (Scores > Element)
-	{
-		fopen_s(&File, "record.txt", "w");
-		fprintf(File, "%d", Scores);
-		fclose(File);
-	}
-}
 
 int main()
 {
