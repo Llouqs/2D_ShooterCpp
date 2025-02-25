@@ -1,0 +1,26 @@
+# CMake build directories
+/build/
+/out/
+/CMakeFiles/
+CMakeCache.txt
+CMakeLists.txt.user
+CMakeLists.txt.cfg
+
+# Visual Studio files
+.vs/
+*.vcxproj
+*.vcxproj.user
+*.suo
+*.user
+
+# Compiled binaries
+*.exe
+*.dll
+*.obj
+*.pdb
+*.lib
+
+# IDE specific
+.idea/
+*.swp
+*.bak
