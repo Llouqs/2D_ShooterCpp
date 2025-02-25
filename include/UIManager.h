@@ -1,7 +1,7 @@
 #pragma once
 #include <SFML/Graphics.hpp>
 #include <string>
-#include <memory>  // Äëÿ std::shared_ptr
+#include <memory>  // Ğ”Ğ»Ñ std::shared_ptr
 
 class UIManager {
 private:
